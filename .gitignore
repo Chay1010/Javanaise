@@ -1,0 +1,14 @@
+# Java
+*.class
+bin/
+
+# macOS
+.DS_Store
+__MACOSX/
+
+# IDE
+.idea/
+*.iml
+.classpath
+.project
+.settings/
