@@ -12,7 +12,7 @@ import java.io.Serializable;
 public class JvnObjectImpl implements JvnObject{
 
     private final int joi; //Jvn Object Identifier
-    private String jon;
+    //private String jon;
     private Serializable object;
     private transient JvnLocalServer server;
     private enum LockState {
@@ -26,9 +26,9 @@ public class JvnObjectImpl implements JvnObject{
     private LockState lock = LockState.NL;
     private boolean lockAcquisitionInProgress = false;
 
-    public JvnObjectImpl(int joi, String jon, Serializable object, JvnLocalServer server) {
+    public JvnObjectImpl(int joi , Serializable object, JvnLocalServer server) {
         this.joi = joi;
-        this.jon = jon;
+        //this.jon = jon;
         this.object = object;
         this.server = server;
     }
@@ -47,7 +47,7 @@ public class JvnObjectImpl implements JvnObject{
     public void jvnLockRead() throws JvnException {
         synchronized (this){
 
-            Switch (lock) {
+            switch (lock) {
 
                 case LockState.NL :
                     Serializable newState = server.jvnLockRead(joi);
@@ -79,9 +79,8 @@ public class JvnObjectImpl implements JvnObject{
     public void jvnLockWrite() throws JvnException {
         synchronized (this){
 
-            Switch (lock) {
+            switch (lock) {
 
-                case LockState.RC :
                 case LockState.RC :
                 case LockState.NL :
                     Serializable newState = server.jvnLockWrite(joi);
@@ -111,8 +110,7 @@ public class JvnObjectImpl implements JvnObject{
     public void jvnUnLock() throws JvnException {
        synchronized (this){
 
-            Switch (lock) {
-
+            switch (lock) {
                 case LockState.R :
                     lock = LockState.RC;
                     break;
