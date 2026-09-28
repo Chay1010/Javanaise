@@ -34,6 +34,16 @@ public class JvnObjectImpl implements JvnObject{
     }
 
     @Override
+    public int jvnGetObjectId() throws JvnException {
+        return joi;
+    }
+
+    @Override
+    public Serializable jvnGetObjectState() throws JvnException {
+        return object;
+    }
+
+    @Override
     public void jvnLockRead() throws JvnException {
         synchronized (this){
 
@@ -75,15 +85,6 @@ public class JvnObjectImpl implements JvnObject{
 
     }
 
-    @Override
-    public int jvnGetObjectId() throws JvnException {
-        return 0;
-    }
-
-    @Override
-    public Serializable jvnGetObjectState() throws JvnException {
-        return null;
-    }
 
     @Override
     public void jvnInvalidateReader() throws JvnException {
