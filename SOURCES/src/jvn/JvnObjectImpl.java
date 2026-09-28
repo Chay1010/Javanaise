@@ -89,7 +89,7 @@ public class JvnObjectImpl implements JvnObject{
                     lock = LockState.W;
                     break;
             
-
+			    case LockState.RWC :
                 case LockState.WC :
                     lock = LockState.W;
                     break;
@@ -98,9 +98,6 @@ public class JvnObjectImpl implements JvnObject{
                     // we already have the right to write
                     break;
 
-			    case LockState.RWC :
-                    lock = LockState.W;
-                    break;
             }
 
         }
@@ -132,16 +129,32 @@ public class JvnObjectImpl implements JvnObject{
 
     @Override
     public void jvnInvalidateReader() throws JvnException {
-
+        waitWHileBusy(LockState.R);
+        lock = LockState.NL;
     }
 
     @Override
     public Serializable jvnInvalidateWriter() throws JvnException {
-        return null;
+        waitWHileBusy(LockState.W);
+        lock = LockState.NL;
+        return object;
     }
 
     @Override
     public Serializable jvnInvalidateWriterForReader() throws JvnException {
-        return null;
+        waitWHileBusy(LockState.W);
+        lock = LockState.RC;
+        return object;
+    }
+
+    public void waitWHileBusy (LockState busy) {
+        while(lock == LockState.busy) {
+            try {
+                wait();
+            }
+            catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }
