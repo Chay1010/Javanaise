@@ -8,12 +8,15 @@
 
 package jvn;
 
+import java.rmi.Naming;
+import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.io.*;
+import java.util.HashMap;
+import java.util.Map;
 
 
-
-public class JvnServerImpl 	
+public class JvnServerImpl
               extends UnicastRemoteObject //Cela signifie que cette instance peut être utilisée comme objet distant RMI.
 							implements JvnLocalServer, JvnRemoteServer{ 
 	
@@ -24,6 +27,17 @@ public class JvnServerImpl
 	// A JVN server is managed as a singleton 
 	private static JvnServerImpl js = null;
 
+	//Reference vers le coordinateur
+	private JvnRemoteCoord coord;
+
+	/*
+	 * Liste des objets connus par ce serveur.
+	 * clé   : ID de l'objet
+	 * valeur : JvnObject correspondant
+	 */
+	private Map<Integer, JvnObject> CachedObjects;
+	//private Map<String, JvnObject> names;
+
   /**
   * Default constructor
   * @throws JvnException
@@ -31,9 +45,14 @@ public class JvnServerImpl
 	private JvnServerImpl() throws Exception {
 		super();
 		// to be completed
+		CachedObjects = new HashMap<>();
+
+		//connercter le JvnServeImpl au JvnCoordimpl grace a java Rmi;
+		//Trouve-moi l'objet distant qui est enregistré sous ce nom.
+		coord = (JvnRemoteCoord) Naming.lookup("rmi://localhost:1099/JvnCoord");
 	}
-	
-  /**
+
+	/**
     * Static method allowing an application to get a reference to 
     * a JVN server instance
     * @throws JvnException
@@ -55,8 +74,13 @@ public class JvnServerImpl
 	**/
 	public  void jvnTerminate()
 	throws jvn.JvnException {
-    // to be completed 
-	} 
+        try {
+            coord.jvnTerminate(js);
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
 	
 	/**
 	* creation of a JVN object
@@ -64,9 +88,16 @@ public class JvnServerImpl
 	* @throws JvnException
 	**/
 	public  JvnObject jvnCreateObject(Serializable o)
-	throws jvn.JvnException { 
-		// to be completed 
-		return null; 
+	throws JvnException {
+		int id;
+        try {
+			id = coord.jvnGetObjectId();
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
+        JvnObjectImpl newObject = new JvnObjectImpl(id, o, js);
+		CachedObjects.put(id, newObject);
+		return newObject;
 	}
 	
 	/**
@@ -77,8 +108,13 @@ public class JvnServerImpl
 	**/
 	public  void jvnRegisterObject(String jon, JvnObject jo)
 	throws jvn.JvnException {
-		// to be completed 
-	}
+        try {
+            coord.jvnRegisterObject(jon,jo,js);
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
 	
 	/**
 	* Provide the reference of a JVN object beeing given its symbolic name
@@ -88,8 +124,14 @@ public class JvnServerImpl
 	**/
 	public  JvnObject jvnLookupObject(String jon)
 	throws jvn.JvnException {
-    // to be completed 
-		return null;
+    // to be completed
+		JvnObject jvnSearchedObject;
+        try {
+            jvnSearchedObject = coord.jvnLookupObject(jon, js);
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
+        return jvnSearchedObject;
 	}	
 	
 	/**
@@ -100,7 +142,7 @@ public class JvnServerImpl
 	**/
    public Serializable jvnLockRead(int joi)
 	 throws JvnException {
-		// to be completed 
+		// to be completed s
 		return null;
 
 	}	
