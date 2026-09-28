@@ -77,11 +77,55 @@ public class JvnObjectImpl implements JvnObject{
 
     @Override
     public void jvnLockWrite() throws JvnException {
+        synchronized (this){
+
+            Switch (lock) {
+
+                case LockState.RC :
+                case LockState.RC :
+                case LockState.NL :
+                    Serializable newState = server.jvnLockWrite(joi);
+                    object = newState;
+                    lock = LockState.W;
+                    break;
+            
+
+                case LockState.WC :
+                    lock = LockState.W;
+                    break;
+
+			    case LockState.W :
+                    // we already have the right to write
+                    break;
+
+			    case LockState.RWC :
+                    lock = LockState.W;
+                    break;
+            }
+
+        }
 
     }
 
     @Override
     public void jvnUnLock() throws JvnException {
+       synchronized (this){
+
+            Switch (lock) {
+
+                case LockState.R :
+                    lock = LockState.RC;
+                    break;
+			    case LockState.W :
+                    lock = LockState.WC;
+                    break;
+			    case LockState.RWC :
+                    lock = LockState.WC;
+                    break;
+            }
+
+        }
+
 
     }
 
