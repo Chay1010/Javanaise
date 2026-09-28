@@ -11,7 +11,8 @@ import java.io.Serializable;
  **/
 public class JvnObjectImpl implements JvnObject{
 
-    private int idObject; //Jvn Object Identifier
+    private final int joi; //Jvn Object Identifier
+    private String jon;
     private Serializable object;
     private transient JvnLocalServer server;
     private enum LockState {
@@ -22,9 +23,34 @@ public class JvnObjectImpl implements JvnObject{
         W,
         RWC
     }
+    private LockState lockState = LockState.NL;
+    private boolean lockAcquisitionInProgress = false;
+
+    public JvnObjectImpl(int joi, String jon, Serializable object, JvnLocalServer server) {
+        this.joi = joi;
+        this.jon = jon;
+        this.object = object;
+        this.server = server;
+    }
 
     @Override
     public void jvnLockRead() throws JvnException {
+        synchronized (this){
+            if(lockState == LockState.RC){
+                lockState = LockState.R;
+                return;
+            }
+
+            if(lockState == LockState.WC){
+                lockState = LockState.RWC;
+                return;
+            }
+
+            if(lockState == LockState.R || lockState == LockState.W || lockState == LockState.RWC){
+                throw new JvnException("Impossible de prendre un verrou READ : verrou déjà utilisé.");
+            }
+
+        }
 
     }
 
