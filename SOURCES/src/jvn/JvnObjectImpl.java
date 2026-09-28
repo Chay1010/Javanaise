@@ -23,7 +23,7 @@ public class JvnObjectImpl implements JvnObject{
         W,
         RWC
     }
-    private LockState lockState = LockState.NL;
+    private LockState lock = LockState.NL;
     private boolean lockAcquisitionInProgress = false;
 
     public JvnObjectImpl(int joi, String jon, Serializable object, JvnLocalServer server) {
@@ -36,18 +36,29 @@ public class JvnObjectImpl implements JvnObject{
     @Override
     public void jvnLockRead() throws JvnException {
         synchronized (this){
-            if(lockState == LockState.RC){
-                lockState = LockState.R;
-                return;
-            }
 
-            if(lockState == LockState.WC){
-                lockState = LockState.RWC;
-                return;
-            }
+            Switch (lock) {
 
-            if(lockState == LockState.R || lockState == LockState.W || lockState == LockState.RWC){
-                throw new JvnException("Impossible de prendre un verrou READ : verrou déjà utilisé.");
+                case LockState.NL :
+                    Serializable newState = server.jvnLockRead(joi);
+                    object = newState;
+                    lock = LockState.R;
+                    break;
+
+                case LockState.RC :
+                    lock = LockState.R;
+                    break;
+            
+
+                case LockState.WC :
+                    lock = LockState.RWC;
+                    break;
+
+                case LockState.R :
+			    case LockState.W :
+			    case LockState.RWC :
+                    // we do nothing since we already have the required rights
+                    break;
             }
 
         }
