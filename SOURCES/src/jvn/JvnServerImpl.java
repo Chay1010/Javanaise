@@ -12,8 +12,7 @@ import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.io.*;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Hashtable;
 
 
 public class JvnServerImpl
@@ -35,8 +34,8 @@ public class JvnServerImpl
 	 * clé   : ID de l'objet
 	 * valeur : JvnObject correspondant
 	 */
-	private Map<Integer, JvnObject> cachedObjects;
-	//private Map<String, JvnObject> names;
+	private Hashtable<Integer, JvnObject> cachedObjects;
+
 
   /**
   * Default constructor
@@ -45,7 +44,7 @@ public class JvnServerImpl
 	private JvnServerImpl() throws Exception {
 		super();
 		// to be completed
-		cachedObjects = new HashMap<>();
+		cachedObjects = new Hashtable<>();
 
 		//connercter le JvnServeImpl au JvnCoordimpl grace a java Rmi;
 		//Trouve-moi l'objet distant qui est enregistré sous ce nom.
