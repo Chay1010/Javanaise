@@ -17,17 +17,33 @@ public class JvnCoordImpl
 							implements JvnRemoteCoord{
 	
 
+	
+  private static final long serialVersionUID = 1L;
+
+
   /**
-	 * 
+	 * this is therepresentation of each exposed object from the coordinator's prespective
 	 */
-	private static final long serialVersionUID = 1L;
+  private class ObjectInCoord {
+    Serializable object; // object itself
+    JvnRemoteServer writer; // client with the permission to write
+    Set<JvnRemoteServer> readers = new HashSet<JvnRemoteServer>; // client(s) with the permission to read
+  }
+
+
+  private int nextId; // the object IDs
+  private Hashtable<Integer, ObjectInCoord> objects; //each object representation paired with it's ID
+  private Hashtable<String , Integer> names; // each object ID paired with the object's symbolic name
 
 /**
   * Default constructor
   * @throws JvnException
   **/
 	private JvnCoordImpl() throws Exception {
-		// to be completed
+		super();
+    nextId = 1;
+    objects = new Hashtable<Integer, ObjectInCoord>();
+    names = new Hashtable<String, Integer>();
 	}
 
   /**
@@ -37,8 +53,7 @@ public class JvnCoordImpl
   **/
   public int jvnGetObjectId()
   throws java.rmi.RemoteException,jvn.JvnException {
-    // to be completed 
-    return 0;
+      return nextId++;
   }
   
   /**
