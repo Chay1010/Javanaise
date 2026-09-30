@@ -66,7 +66,23 @@ public class JvnCoordImpl
   **/
   public void jvnRegisterObject(String jon, JvnObject jo, JvnRemoteServer js)
   throws java.rmi.RemoteException,jvn.JvnException{
-    // to be completed 
+    
+    int id = jo.jvnGetObjectId();
+        
+    synchronized(this) {
+      names.put(jon, id);
+      
+      if( !objects.containsKey(id)) {
+        ObjectInCoord newObject = new ObjectInCoord();
+        newObject.object = jo.jvnGetObjectState;
+        newObject.writer = js;
+        
+        objects.put(id, newObject);
+
+      }
+      
+    }
+
   }
   
   /**
