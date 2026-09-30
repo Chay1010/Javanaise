@@ -35,7 +35,7 @@ public class JvnServerImpl
 	 * clé   : ID de l'objet
 	 * valeur : JvnObject correspondant
 	 */
-	private Map<Integer, JvnObject> CachedObjects;
+	private Map<Integer, JvnObject> cachedObjects;
 	//private Map<String, JvnObject> names;
 
   /**
@@ -45,7 +45,7 @@ public class JvnServerImpl
 	private JvnServerImpl() throws Exception {
 		super();
 		// to be completed
-		CachedObjects = new HashMap<>();
+		cachedObjects = new HashMap<>();
 
 		//connercter le JvnServeImpl au JvnCoordimpl grace a java Rmi;
 		//Trouve-moi l'objet distant qui est enregistré sous ce nom.
@@ -79,7 +79,7 @@ public class JvnServerImpl
         } catch (RemoteException e) {
             throw new JvnException("RemoteException in jvnTerminate: " + e.getMessage());
         }
-		CachedObjects.clear();
+		cachedObjects.clear();
     }
 	
 	/**
@@ -96,7 +96,7 @@ public class JvnServerImpl
             throw new RuntimeException(e);
         }
         JvnObjectImpl newObject = new JvnObjectImpl(id, o, js);
-		CachedObjects.put(id, newObject);
+		cachedObjects.put(id, newObject);
 		return newObject;
 	}
 	
@@ -179,10 +179,11 @@ public class JvnServerImpl
 	**/
   public void jvnInvalidateReader(int joi)
 	throws java.rmi.RemoteException,jvn.JvnException {
-		try {
-			return coord.jvnInvalidateReader();
-		} catch (RemoteException e) {
-			throw new JvnException("RemoteException in jvnLockWrite: " + e.getMessage());
+		
+		JvnObjectImpl obj = cachedObjects.get(joi);
+		
+		if (obj != null) {
+			obj.jvnInvalidateReader();
 		}
 	};
 	    
@@ -194,11 +195,14 @@ public class JvnServerImpl
 	**/
   public Serializable jvnInvalidateWriter(int joi)
 	throws java.rmi.RemoteException,jvn.JvnException { 
-		try {
-			return coord.jvnInvalidateWriter();
-		} catch (RemoteException e) {
-			throw new JvnException("RemoteException in jvnLockWrite: " + e.getMessage());
+		
+		JvnObjectImpl obj = cachedObjects.get(joi);
+		
+		if (obj != null) {
+			return obj.jvnInvalidateWriter();
 		}
+
+		return null;
 	};
 	
 	/**
@@ -209,11 +213,14 @@ public class JvnServerImpl
 	**/
    public Serializable jvnInvalidateWriterForReader(int joi)
 	 throws java.rmi.RemoteException,jvn.JvnException { 
-		try {
-			return coord.jvnInvalidateWriterForReader();
-		} catch (RemoteException e) {
-			throw new JvnException("RemoteException in jvnLockWrite: " + e.getMessage());
+		
+		JvnObjectImpl obj = cachedObjects.get(joi);
+		
+		if (obj != null) {
+			obj.jvnInvalidateWriterForReader();
 		}
+
+		return null;
 	 };
 
 }
