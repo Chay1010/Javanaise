@@ -146,7 +146,7 @@ public class JvnObjectImpl implements JvnObject{
     }
 
     public void waitWHileBusy (LockState busy) {
-        while(lock == LockState.busy) {
+        while(lock == busy) {
             try {
                 wait();
             }
