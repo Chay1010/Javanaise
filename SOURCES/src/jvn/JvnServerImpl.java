@@ -77,9 +77,9 @@ public class JvnServerImpl
         try {
             coord.jvnTerminate(js);
         } catch (RemoteException e) {
-            throw new RuntimeException(e);
+            throw new JvnException("RemoteException in jvnTerminate: " + e.getMessage());
         }
-
+		CachedObjects.clear();
     }
 	
 	/**
@@ -131,6 +131,11 @@ public class JvnServerImpl
         } catch (RemoteException e) {
             throw new RuntimeException(e);
         }
+
+		if(jvnSearchedObject == null) {
+			return null;
+		}
+
         return jvnSearchedObject;
 	}	
 	
@@ -142,8 +147,11 @@ public class JvnServerImpl
 	**/
    public Serializable jvnLockRead(int joi)
 	 throws JvnException {
-		// to be completed s
-		return null;
+		try {
+			return coord.jvnLockRead(joi, js);
+		} catch (RemoteException e) {
+			throw new JvnException("RemoteException in jvnLockRead: " + e.getMessage());
+		}
 
 	}	
 	/**
@@ -154,8 +162,11 @@ public class JvnServerImpl
 	**/
    public Serializable jvnLockWrite(int joi)
 	 throws JvnException {
-		// to be completed 
-		return null;
+		try {
+			return coord.jvnLockWrite(joi, js);
+		} catch (RemoteException e) {
+			throw new JvnException("RemoteException in jvnLockWrite: " + e.getMessage());
+		}
 	}	
 
 	
@@ -168,7 +179,11 @@ public class JvnServerImpl
 	**/
   public void jvnInvalidateReader(int joi)
 	throws java.rmi.RemoteException,jvn.JvnException {
-		// to be completed 
+		try {
+			return coord.jvnInvalidateReader();
+		} catch (RemoteException e) {
+			throw new JvnException("RemoteException in jvnLockWrite: " + e.getMessage());
+		}
 	};
 	    
 	/**
@@ -179,8 +194,11 @@ public class JvnServerImpl
 	**/
   public Serializable jvnInvalidateWriter(int joi)
 	throws java.rmi.RemoteException,jvn.JvnException { 
-		// to be completed 
-		return null;
+		try {
+			return coord.jvnInvalidateWriter();
+		} catch (RemoteException e) {
+			throw new JvnException("RemoteException in jvnLockWrite: " + e.getMessage());
+		}
 	};
 	
 	/**
@@ -191,8 +209,11 @@ public class JvnServerImpl
 	**/
    public Serializable jvnInvalidateWriterForReader(int joi)
 	 throws java.rmi.RemoteException,jvn.JvnException { 
-		// to be completed 
-		return null;
+		try {
+			return coord.jvnInvalidateWriterForReader();
+		} catch (RemoteException e) {
+			throw new JvnException("RemoteException in jvnLockWrite: " + e.getMessage());
+		}
 	 };
 
 }
