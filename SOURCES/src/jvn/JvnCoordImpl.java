@@ -8,49 +8,37 @@
 
 package jvn;
 
+import java.rmi.Naming;
+import java.rmi.registry.LocateRegistry;
 import java.rmi.server.UnicastRemoteObject;
-import java.io.Serializable;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Set;
+import java.io.Serializable;
 
 
-public class JvnCoordImpl
-              extends UnicastRemoteObject
+public class JvnCoordImpl 	
+              extends UnicastRemoteObject 
 							implements JvnRemoteCoord{
+	
+
+	
+  private static final long serialVersionUID = 1L;
 
 
   /**
-	 *
+	 * this is therepresentation of each exposed object from the coordinator's prespective
 	 */
-	private static final long serialVersionUID = 1L;
-    private int nextObjectId =0;
+  private class ObjectInCoord {
+    Serializable object; // object itself
+    JvnRemoteServer writer; // client with the permission to write
+    Set<JvnRemoteServer> readers = new HashSet<JvnRemoteServer>(); // client(s) with the permission to read
+  }
 
-    private Hashtable<Integer, ObjectInfo> objectsById;
-    private Hashtable<String, ObjectInfo> objectsByName;
 
-    private static class ObjectInfo{
-        int joi;
-        String jon;
-
-        //Dernier Etat valide de l'objet
-        Serializable state;
-        // Client qui possede actuellement writing lock
-        JvnRemoteServer writer;
-
-        // Clients qui possèdent actuellement un verrou de lecture
-        Set<JvnRemoteServer> readers;
-
-        ObjectInfo(int joi, String jon, Serializable state) {
-            this.joi = joi;
-            this.jon = jon;
-            this.state = state;
-            this.writer = null;
-            this.readers = new HashSet<>();
-        }
-
-    }
+  private int nextId; // the object IDs
+  private Hashtable<Integer, ObjectInCoord> objects; //each object representation paired with it's ID
+  private Hashtable<String , Integer> names; // each object ID paired with the object's symbolic name
 
 /**
   * Default constructor
@@ -58,73 +46,99 @@ public class JvnCoordImpl
   **/
 	private JvnCoordImpl() throws Exception {
 		super();
-        objectsById = new Hashtable<>();
-        objectsByName = new Hashtable<>();
+        nextId = 1;
+        objects = new Hashtable<Integer, ObjectInCoord>();
+        names = new Hashtable<String, Integer>();
+	}
+	
+	/**
+	 * Starts the coordinator and binds it in the RMI registry.
+	 */
+	public static void main(String[] args) {
+		try {
+			LocateRegistry.createRegistry(1099);
+		} catch (Exception e) {
+			// registry likely already running, ignore
+		}
+		try {
+			JvnCoordImpl coord = new JvnCoordImpl();
+			Naming.rebind("rmi://localhost/JvnCoord", coord);
+			System.out.println("JvnCoord ready");
+		} catch (Exception e) {
+			System.out.println("JvnCoord problem : " + e.getMessage());
+		}
 	}
 
+
   /**
-  *  Allocate a NEW JVN object id (usually allocated to a
+  *  Allocate a NEW JVN object id (usually allocated to a 
   *  newly created JVN object)
   * @throws java.rmi.RemoteException,JvnException
   **/
-  public int jvnGetObjectId()
-  throws java.rmi.RemoteException,jvn.JvnException {
-    return nextObjectId++;
+  public synchronized int jvnGetObjectId()  throws java.rmi.RemoteException,jvn.JvnException {
+      return nextId++;
   }
-
+  
   /**
   * Associate a symbolic name with a JVN object
   * @param jon : the JVN object name
-  * @param jo  : the JVN object
+  * @param jo  : the JVN object 
   * @param joi : the JVN object identification
   * @param js  : the remote reference of the JVNServer
   * @throws java.rmi.RemoteException,JvnException
   **/
-  //Register an object after its creation by the client
-  public void jvnRegisterObject(String jon, JvnObject jo, JvnRemoteServer js)
-  throws java.rmi.RemoteException,jvn.JvnException{
-    if (jon==null || jo==null || js==null){
-        throw new NullPointerException("Invalid parameter");
-    }
+  public void jvnRegisterObject(String jon, JvnObject jo, JvnRemoteServer js)  throws java.rmi.RemoteException,jvn.JvnException{
+    
+        int id = jo.jvnGetObjectId();
+            
+        synchronized(this) {
+        names.put(jon, id);
+        
+        if( !objects.containsKey(id)) {
+            ObjectInCoord newObject = new ObjectInCoord();
+            newObject.object = jo.jvnGetObjectState();
+            newObject.writer = js;
+            
+            objects.put(id, newObject);
 
-    if(objectsByName.contains(jon)){
-        throw new jvn.JvnException("jvn  with the name "+jon+" already registered");
-    }
+        }
 
-    int joi = jo.jvnGetObjectId();
-    if(objectsById.contains(joi)){
-          throw new jvn.JvnException("jvn  with the name "+joi+" already registered");
-      }
+        }
 
-    Serializable state = jo.jvnGetObjectState();
-
-    ObjectInfo objectInfo = new ObjectInfo(joi, jon, state);
-
-    objectsById.put(joi, objectInfo);
-    objectsByName.put(jon, objectInfo);
   }
-
+  
   /**
-  * Get the reference of a JVN object managed by a given JVN server
+  * Get the reference of a JVN object managed by a given JVN server 
   * @param jon : the JVN object name
   * @param js : the remote reference of the JVNServer
   * @throws java.rmi.RemoteException,JvnException
   **/
-  //Recuperer la representation de l'objet a partir de son jon
-  //Client demande au cordianteur de lui renvoyer la representation de l'objet a partir de son jon
-  public JvnObject jvnLookupObject(String jon, JvnRemoteServer js)
-  throws java.rmi.RemoteException,jvn.JvnException{
-    ObjectInfo objectInfo = objectsById.get(jon);
+  public JvnObject jvnLookupObject(String jon, JvnRemoteServer js) throws java.rmi.RemoteException,jvn.JvnException{
+    
+        Integer id;
+        ObjectInCoord objetInfo;
 
-    if(objectInfo==null){
-        return null;
-    }
+        synchronized (this) {
+            id = names.get(jon);
+            
+            if (id == null) {
+                return null;
+            }
 
-    return new JvnObjectImpl(objectInfo.joi, objectInfo.state,null);
+            objetInfo = objects.get(id);
+            if (objetInfo == null) {
+			return null;
+		    }
+
+            // we give him a no lock because the asker just lookedup the object, so they have no locks in it yet
+            return new JvnObjectImpl(id, objetInfo.object, null, JvnObjectImpl.LockState.NL);
+
+        }
+
   }
-
+  
   /**
-  * Get a Read lock on a JVN object managed by a given JVN server
+  * Get a Read lock on a JVN object managed by a given JVN server 
   * @param joi : the JVN object identification
   * @param js  : the remote reference of the server
   * @return the current JVN object state
@@ -132,28 +146,29 @@ public class JvnCoordImpl
   **/
    public Serializable jvnLockRead(int joi, JvnRemoteServer js)
    throws java.rmi.RemoteException, JvnException{
-    ObjectInfo objectInfo = objectsById.get(joi);
+        
+        ObjectInCoord objetInfo = objects.get(joi);
+        if(objetInfo == null) {
+            throw new JvnException("Unknown object id: " + joi);
+        }
 
-    if(objectInfo==null){
-        throw new JvnException("jvn  with the id "+joi+" does not exist");
-    }
+        synchronized(objetInfo) {
+            if(objetInfo.writer != null && objetInfo.writer != js) {
+                // if another client already has a write lock, then downgrade it to a reader, so both askers have a read lock
+                Serializable newState = objetInfo.writer.jvnInvalidateWriterForReader(joi);
+                objetInfo.object = newState;
+                objetInfo.readers.add(objetInfo.writer);
+                objetInfo.writer = null;
+            }
 
-    if(objectInfo.writer != null && objectInfo.writer != js){
-        Serializable newState = objectInfo.writer.jvnInvalidateWriterForReader(joi);
-        objectInfo.state = newState;
-        objectInfo.readers.add(objectInfo.writer);
-        objectInfo.writer = null;
-    }
+            objetInfo.readers.add(js);
+            return objetInfo.object;
+        }
 
-    //Ajout du nouveau reader
-    objectInfo.readers.add(js);
-
-    //Envoie de l'objet actuel a C2
-    return objectInfo.state;
    }
 
   /**
-  * Get a Write lock on a JVN object managed by a given JVN server
+  * Get a Write lock on a JVN object managed by a given JVN server 
   * @param joi : the JVN object identification
   * @param js  : the remote reference of the server
   * @return the current JVN object state
@@ -161,32 +176,31 @@ public class JvnCoordImpl
   **/
    public Serializable jvnLockWrite(int joi, JvnRemoteServer js)
    throws java.rmi.RemoteException, JvnException{
+    
+        ObjectInCoord objetInfo = objects.get(joi);
+        if(objetInfo == null) {
+            throw new JvnException("Unknown object id: " + joi);
+        }
 
-       ObjectInfo objectInfo = objectsById.get(joi);
-       if(objectInfo==null){
-           throw new JvnException("jvn  with the id "+joi+" does not exist");
-       }
+        synchronized(objetInfo) {
+            if(objetInfo.writer != null && objetInfo.writer != js) {
+                // if another client already has a write lock, then remove it, only the asker has a writer lok at the end
+                Serializable newState = objetInfo.writer.jvnInvalidateWriter(joi);
+                objetInfo.object = newState;
+                objetInfo.writer = null;
+            }
 
-       if(objectInfo.writer != null && objectInfo.writer != js){
-           Serializable newState = objectInfo.writer.jvnInvalidateWriter(joi);
+            for (JvnRemoteServer reader : new HashSet<JvnRemoteServer>(objetInfo.readers)) {
+				if (reader != js) {
+					reader.jvnInvalidateReader(joi);
+				}
+			}
 
-           objectInfo.state = newState;
-           objectInfo.writer = null;
-       }
+            objetInfo.readers.clear();
+            objetInfo.writer = js;
+            return objetInfo.object;
+        }
 
-       for(JvnRemoteServer reader : objectInfo.readers){
-
-           if(reader != js){
-               reader.jvnInvalidateReader(joi);
-           }
-       }
-
-       objectInfo.readers.clear();
-
-       objectInfo.writer = js;
-
-
-    return objectInfo.state;
    }
 
 	/**
@@ -196,21 +210,13 @@ public class JvnCoordImpl
 	**/
     public void jvnTerminate(JvnRemoteServer js)
 	 throws java.rmi.RemoteException, JvnException {
-	 if(js == null){
-         return;
-     }
-
-     for(ObjectInfo objectInfo : objectsById.values()){
-         if(objectInfo.writer != null && objectInfo.writer != js){
-
-             if(objectInfo.writer == js){
-                 Serializable newState = js.jvnInvalidateWriter(objectInfo.joi);
-                 objectInfo.state = newState;
-                 objectInfo.writer = null;
-             }
-
-             objectInfo.readers.remove(js);
-         }
+	 synchronized (this) {
+        for (ObjectInCoord objectInfo : objects.values()) {
+				if (objectInfo.writer == js) {
+					objectInfo.writer = null;
+				}
+				objectInfo.readers.remove(js);
+			}
      }
     }
 }

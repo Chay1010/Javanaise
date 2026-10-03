@@ -18,8 +18,8 @@ import java.io.*;
 public class Irc {
 	public TextArea		text;
 	public TextField	data;
-	Frame 			frame;
-	JvnObject       sentence;
+	Frame 				frame;
+	JvnObject       	sentence;
 
 
   /**

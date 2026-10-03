@@ -34,7 +34,7 @@ public class JvnServerImpl
 	 * clé   : ID de l'objet
 	 * valeur : JvnObject correspondant
 	 */
-	private Hashtable<Integer, JvnObject> cachedObjects;
+	private Hashtable<Integer, JvnObjectImpl> cachedObjects;
 
 
   /**
@@ -61,6 +61,7 @@ public class JvnServerImpl
 			try {
 				js = new JvnServerImpl();
 			} catch (Exception e) {
+				System.out.println("JvnServerImpl problem : " + e.getMessage());
 				return null;
 			}
 		}
@@ -94,7 +95,7 @@ public class JvnServerImpl
         } catch (RemoteException e) {
             throw new RuntimeException(e);
         }
-        JvnObjectImpl newObject = new JvnObjectImpl(id, o, js);
+        JvnObjectImpl newObject = new JvnObjectImpl(id, o, js, JvnObjectImpl.LockState.W);
 		cachedObjects.put(id, newObject);
 		return newObject;
 	}
@@ -123,10 +124,9 @@ public class JvnServerImpl
 	**/
 	public  JvnObject jvnLookupObject(String jon)
 	throws jvn.JvnException {
-    // to be completed
 		JvnObject jvnSearchedObject;
         try {
-            jvnSearchedObject = coord.jvnLookupObject(jon, js);
+            jvnSearchedObject = coord.jvnLookupObject(jon, this);
         } catch (RemoteException e) {
             throw new RuntimeException(e);
         }
@@ -135,7 +135,11 @@ public class JvnServerImpl
 			return null;
 		}
 
-        return jvnSearchedObject;
+		JvnObjectImpl joi = (JvnObjectImpl) jvnSearchedObject;
+		joi.setServer(this);
+		cachedObjects.put(joi.jvnGetObjectId(), joi);
+
+		return joi;
 	}	
 	
 	/**
@@ -213,10 +217,10 @@ public class JvnServerImpl
    public Serializable jvnInvalidateWriterForReader(int joi)
 	 throws java.rmi.RemoteException,jvn.JvnException { 
 		
-		JvnObjectImpl obj = cachedObjects.get(joi);
+		JvnObjectImpl obj =  cachedObjects.get(joi);
 		
 		if (obj != null) {
-			obj.jvnInvalidateWriterForReader();
+			return obj.jvnInvalidateWriterForReader();
 		}
 
 		return null;

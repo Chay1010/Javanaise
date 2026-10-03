@@ -12,26 +12,29 @@ import java.io.Serializable;
 public class JvnObjectImpl implements JvnObject{
 
     private final int joi; //Jvn Object Identifier
-    //private String jon;
     private Serializable object;
-    private transient JvnLocalServer server;
-    private enum LockState {
+    private transient JvnServerImpl server;
+    public enum LockState {
         NL,
-        RC,
-        WC,
         R,
         W,
+        RC,
+        WC,
         RWC
     }
-    private LockState lock = LockState.NL;
-    private boolean lockAcquisitionInProgress = false;
+    private LockState lock;
 
-    public JvnObjectImpl(int joi , Serializable object, JvnLocalServer server) {
+    public JvnObjectImpl(int joi , Serializable object, JvnServerImpl server, LockState lock) {
         this.joi = joi;
-        //this.jon = jon;
+
         this.object = object;
         this.server = server;
+        this.lock = lock;
     }
+    
+	public void setServer(JvnServerImpl server) {
+		this.server = server;
+	}
 
     @Override
     public int jvnGetObjectId() throws JvnException {
