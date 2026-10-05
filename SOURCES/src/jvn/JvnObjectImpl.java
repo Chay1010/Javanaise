@@ -11,6 +11,8 @@ import java.io.Serializable;
  **/
 public class JvnObjectImpl implements JvnObject{
 
+	private static final long serialVersionUID = 1L;
+	
     private final int joi; //Jvn Object Identifier
     private Serializable object;
     private transient JvnServerImpl server;
@@ -123,7 +125,7 @@ public class JvnObjectImpl implements JvnObject{
             }
 
         }
-
+       notifyAll();
 
     }
 
@@ -132,19 +134,23 @@ public class JvnObjectImpl implements JvnObject{
     public void jvnInvalidateReader() throws JvnException {
         waitWHileBusy(LockState.R);
         lock = LockState.NL;
+        notifyAll();
     }
 
     @Override
     public Serializable jvnInvalidateWriter() throws JvnException {
         waitWHileBusy(LockState.W);
         lock = LockState.NL;
+        notifyAll();
         return object;
+        
     }
 
     @Override
     public Serializable jvnInvalidateWriterForReader() throws JvnException {
         waitWHileBusy(LockState.W);
         lock = LockState.RC;
+        notifyAll();
         return object;
     }
 

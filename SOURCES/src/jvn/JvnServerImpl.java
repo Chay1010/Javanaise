@@ -48,7 +48,8 @@ public class JvnServerImpl
 
 		//connercter le JvnServeImpl au JvnCoordimpl grace a java Rmi;
 		//Trouve-moi l'objet distant qui est enregistré sous ce nom.
-		coord = (JvnRemoteCoord) Naming.lookup("rmi://localhost:1099/JvnCoord");
+		String coordHost = System.getProperty("coord.host", "localhost");
+		coord = (JvnRemoteCoord) Naming.lookup("rmi://" + coordHost + ":1099/JvnCoord");
 	}
 
 	/**
