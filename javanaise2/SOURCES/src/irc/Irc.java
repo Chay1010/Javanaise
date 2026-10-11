@@ -122,7 +122,7 @@ public class Irc {
     * Management of user events
    **/
 	public void actionPerformed (ActionEvent e) {
-	    irc.sentence.write(irc.data.getText());
+	    irc.sentence.write(irc.data.getText());	// lock/unlock done by the proxy
 	
 	}
 }

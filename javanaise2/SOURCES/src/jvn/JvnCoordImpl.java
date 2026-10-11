@@ -151,7 +151,7 @@ public class JvnCoordImpl
         }
 
         synchronized(objetInfo) {
-            if(objetInfo.writer != null && objetInfo.writer != js) {
+        	if (objetInfo.writer != null && !objetInfo.writer.equals(js)) {
                 // if another client already has a write lock, then downgrade it to a reader, so both askers have a read lock
                 Serializable newState = objetInfo.writer.jvnInvalidateWriterForReader(joi);
                 objetInfo.object = newState;
@@ -181,18 +181,18 @@ public class JvnCoordImpl
         }
 
         synchronized(objetInfo) {
-            if(objetInfo.writer != null && objetInfo.writer != js) {
+        	if (objetInfo.writer != null && !objetInfo.writer.equals(js)) {
                 // if another client already has a write lock, then remove it, only the asker has a writer lok at the end
                 Serializable newState = objetInfo.writer.jvnInvalidateWriter(joi);
                 objetInfo.object = newState;
                 objetInfo.writer = null;
             }
 
-            for (JvnRemoteServer reader : new HashSet<JvnRemoteServer>(objetInfo.readers)) {
-				if (reader != js) {
-					reader.jvnInvalidateReader(joi);
-				}
-			}
+        	for (JvnRemoteServer reader : new HashSet<JvnRemoteServer>(objetInfo.readers)) {
+        	    if (!reader.equals(js)) {
+        	        reader.jvnInvalidateReader(joi);
+        	    }
+        	}
 
             objetInfo.readers.clear();
             objetInfo.writer = js;
@@ -210,7 +210,7 @@ public class JvnCoordImpl
 	 throws java.rmi.RemoteException, JvnException {
 	 synchronized (this) {
         for (ObjectInCoord objectInfo : objects.values()) {
-				if (objectInfo.writer == js) {
+        		if (js.equals(objectInfo.writer)) {
 					objectInfo.writer = null;
 				}
 				objectInfo.readers.remove(js);
