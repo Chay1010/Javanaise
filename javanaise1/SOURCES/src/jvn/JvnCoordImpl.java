@@ -54,19 +54,18 @@ public class JvnCoordImpl
 	/**
 	 * Starts the coordinator and binds it in the RMI registry.
 	 */
-	public static void main(String[] args) {
-	    System.setProperty("java.rmi.server.hostname", "10.76.192.51"); // coordinator's reachable IP
-	    try {
-	        LocateRegistry.createRegistry(1099);
-	    } catch (Exception e) { }
-	    try {
-	        JvnCoordImpl coord = new JvnCoordImpl();
-	        Naming.rebind("rmi://10.76.192.51:1099/JvnCoord", coord);
-	        System.out.println("JvnCoord ready");
-	    } catch (Exception e) {
-	        System.out.println("JvnCoord problem : " + e.getMessage());
-	    }
-	}
+		public static void main(String[] args) {
+		    try {
+		        LocateRegistry.createRegistry(1099);
+		    } catch (Exception e) { }
+		    try {
+		        JvnCoordImpl coord = new JvnCoordImpl();
+		        Naming.rebind("rmi://localhost:1099/JvnCoord", coord);
+		        System.out.println("JvnCoord ready");
+		    } catch (Exception e) {
+		        System.out.println("JvnCoord problem : " + e.getMessage());
+		    }
+		}
 
 
   /**

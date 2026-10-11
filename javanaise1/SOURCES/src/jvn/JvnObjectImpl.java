@@ -123,22 +123,22 @@ public class JvnObjectImpl implements JvnObject{
                     lock = LockState.WC;
                     break;
             }
-
+            notifyAll();
         }
-       notifyAll();
+
 
     }
 
 
     @Override
-    public void jvnInvalidateReader() throws JvnException {
+    public synchronized void jvnInvalidateReader() throws JvnException {
         waitWHileBusy(LockState.R);
         lock = LockState.NL;
         notifyAll();
     }
 
     @Override
-    public Serializable jvnInvalidateWriter() throws JvnException {
+    public synchronized Serializable jvnInvalidateWriter() throws JvnException {
         waitWHileBusy(LockState.W);
         lock = LockState.NL;
         notifyAll();
@@ -147,7 +147,7 @@ public class JvnObjectImpl implements JvnObject{
     }
 
     @Override
-    public Serializable jvnInvalidateWriterForReader() throws JvnException {
+    public synchronized Serializable jvnInvalidateWriterForReader() throws JvnException {
         waitWHileBusy(LockState.W);
         lock = LockState.RC;
         notifyAll();

@@ -19,14 +19,14 @@ public class Irc {
 	public TextArea		text;
 	public TextField	data;
 	Frame 				frame;
-	JvnObject       	sentence;
+	ISentence       	sentence;
 
 
   /**
   * main method
   * create a JVN object nammed IRC for representing the Chat application
   **/
-	public static void main(String argv[]) {
+/*	public static void main(String argv[]) {
 	   try {
 		   
 		// initialize JVN
@@ -49,13 +49,22 @@ public class Irc {
 		   System.out.println("IRC problem : " + e.getMessage());
 	   }
 	}
+	
+	*/
+	
+	public static void main(String[] argv) {
+	    try {
+	        ISentence s = (ISentence) JvnProxy.newInstance("IRC", new Sentence());
+	        new Irc(s);
+	    } catch (Exception e) { e.printStackTrace(); }
+	}
 
   /**
    * IRC Constructor
-   @param jo the JVN object representing the Chat
+   @param s the JVN object representing the Chat
    **/
-	public Irc(JvnObject jo) {
-		sentence = jo;
+	public Irc(ISentence s) {
+		sentence = s;
 		frame=new Frame();
 		frame.setLayout(new GridLayout(1,1));
 		text=new TextArea(10,60);
@@ -90,23 +99,10 @@ public class Irc {
  /**
   * Management of user events
   **/
-	public void actionPerformed (ActionEvent e) {
-	 try {
-		// lock the object in read mode
-		irc.sentence.jvnLockRead();
-		
-		// invoke the method
-		String s = ((Sentence)(irc.sentence.jvnGetObjectState())).read();
-		
-		// unlock the object
-		irc.sentence.jvnUnLock();
-		
-		// display the read value
-		irc.data.setText(s);
-		irc.text.append(s+"\n");
-	   } catch (JvnException je) {
-		   System.out.println("IRC problem : " + je.getMessage());
-	   }
+	public void actionPerformed(ActionEvent e) {
+	    String s = irc.sentence.read();     // lock/unlock done by the proxy
+	    irc.data.setText(s);
+	    irc.text.append(s + "\n");
 	}
 }
 
@@ -124,21 +120,8 @@ public class Irc {
     * Management of user events
    **/
 	public void actionPerformed (ActionEvent e) {
-	   try {	
-		// get the value to be written from the buffer
-    String s = irc.data.getText();
-        	
-    // lock the object in write mode
-		irc.sentence.jvnLockWrite();
-		
-		// invoke the method
-		((Sentence)(irc.sentence.jvnGetObjectState())).write(s);
-		
-		// unlock the object
-		irc.sentence.jvnUnLock();
-	 } catch (JvnException je) {
-		   System.out.println("IRC problem  : " + je.getMessage());
-	 }
+	    irc.sentence.write(irc.data.getText());
+	
 	}
 }
 
