@@ -5,6 +5,8 @@
  * Authors: 
  */
 
+// the VM arguments for the one NOT launching the coordinator : -Dcoord.host=<IP of the machine that launched the coordinator>   -Djava.rmi.server.hostname=<Your own IP>
+
 package irc;
 
 import java.awt.*;

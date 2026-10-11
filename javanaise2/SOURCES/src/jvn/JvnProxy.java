@@ -6,8 +6,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
-import jvn.Annotations.JvnRead;
-import jvn.Annotations.JvnWrite;
+import jvn.JvnRead;
+import jvn.JvnWrite;
 
 public class JvnProxy implements InvocationHandler {
 

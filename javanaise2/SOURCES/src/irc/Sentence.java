@@ -8,8 +8,8 @@
 
 package irc;
 
-import jvn.Annotations.JvnRead;
-import jvn.Annotations.JvnWrite;
+import jvn.JvnRead;
+import jvn.JvnWrite;
 
 
 public class Sentence implements ISentence, java.io.Serializable {
