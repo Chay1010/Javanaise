@@ -134,14 +134,14 @@ public class JvnObjectImpl implements JvnObject{
     public synchronized void jvnInvalidateReader() throws JvnException {
         waitWHileBusy(LockState.R);
         lock = LockState.NL;
-        notifyAll();
+        
     }
 
     @Override
     public synchronized Serializable jvnInvalidateWriter() throws JvnException {
         waitWHileBusy(LockState.W);
         lock = LockState.NL;
-        notifyAll();
+        
         return object;
         
     }
@@ -150,7 +150,7 @@ public class JvnObjectImpl implements JvnObject{
     public synchronized Serializable jvnInvalidateWriterForReader() throws JvnException {
         waitWHileBusy(LockState.W);
         lock = LockState.RC;
-        notifyAll();
+        
         return object;
     }
 
