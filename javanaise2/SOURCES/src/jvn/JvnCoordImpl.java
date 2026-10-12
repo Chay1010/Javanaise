@@ -152,12 +152,20 @@ public class JvnCoordImpl
 
         synchronized(objetInfo) {
         	if (objetInfo.writer != null && !objetInfo.writer.equals(js)) {
-                // if another client already has a write lock, then downgrade it to a reader, so both askers have a read lock
-                Serializable newState = objetInfo.writer.jvnInvalidateWriterForReader(joi);
-                objetInfo.object = newState;
-                objetInfo.readers.add(objetInfo.writer);
+                JvnRemoteServer oldWriter = objetInfo.writer;
                 objetInfo.writer = null;
-            }
+                try {
+	        		// if another client already has a write lock, then downgrade it to a reader, so both askers have a read lock
+                	Serializable newState = oldWriter.jvnInvalidateWriterForReader(joi);
+                	if (newState != null) 
+                		objetInfo.object = newState;
+                	
+                	objetInfo.readers.add(oldWriter);
+                	
+                } catch (java.rmi.RemoteException e) {
+                    System.out.println("Writer is dead, keeping last known state");
+				}
+                }
 
             objetInfo.readers.add(js);
             return objetInfo.object;
@@ -181,18 +189,27 @@ public class JvnCoordImpl
         }
 
         synchronized(objetInfo) {
-        	if (objetInfo.writer != null && !objetInfo.writer.equals(js)) {
-                // if another client already has a write lock, then remove it, only the asker has a writer lok at the end
-                Serializable newState = objetInfo.writer.jvnInvalidateWriter(joi);
-                objetInfo.object = newState;
+            if (objetInfo.writer != null && !objetInfo.writer.equals(js)) {
+                JvnRemoteServer oldWriter = objetInfo.writer;
                 objetInfo.writer = null;
+                try {
+                    Serializable newState = oldWriter.jvnInvalidateWriter(joi);
+                    if (newState != null) 
+                    	objetInfo.object = newState;
+                } catch (java.rmi.RemoteException e) {
+                    System.out.println("Writer is dead, keeping last known state");
+                }
             }
 
-        	for (JvnRemoteServer reader : new HashSet<JvnRemoteServer>(objetInfo.readers)) {
-        	    if (!reader.equals(js)) {
-        	        reader.jvnInvalidateReader(joi);
-        	    }
-        	}
+            for (JvnRemoteServer reader : new HashSet<JvnRemoteServer>(objetInfo.readers)) {
+                if (!reader.equals(js)) {
+                    try {
+                        reader.jvnInvalidateReader(joi);
+                    } catch (java.rmi.RemoteException e) {
+                        System.out.println("Reader is dead, ignored");
+                    }
+                }
+            }
 
             objetInfo.readers.clear();
             objetInfo.writer = js;
