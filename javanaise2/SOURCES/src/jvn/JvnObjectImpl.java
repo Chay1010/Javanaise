@@ -164,4 +164,18 @@ public class JvnObjectImpl implements JvnObject{
             }
         }
     }
+
+    //Indique si l'objet est en cours d'utilisation
+    //R,W,RWC correspondent a une verrou actif
+    public synchronized boolean isBusy(){
+        return lock == LockState.R || lock == LockState.W || lock == LockState.RWC;
+    }
+
+    //Revoie l'etat metier de l'objet
+    //La mehode est synchrose pour lire l'etat local
+    //sous le meme moniteur que les operation sur le verrou
+    public synchronized Serializable getObjectStateForFlush(){
+        return object;
+    }
 }
+

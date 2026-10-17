@@ -1,3 +1,5 @@
+package jvn;
+
 /***
  * JAVANAISE API
  * Contact: 
@@ -5,8 +7,8 @@
  * Authors: 
  */
 
-package jvn; 
 import java.io.Serializable;
+import java.util.Set;
 
 /**
  * Local interface of a JVN server  (used by the applications).
@@ -69,6 +71,18 @@ public interface JvnLocalServer {
     **/
    public  void jvnTerminate()
    throws jvn.JvnException; 
+
+	/**
+	 * Flush un ensemble d'objets du cache local.
+	 *
+	 * Les objets non verrouillés sont sauvegardés auprès du coordinateur
+	 * puis supprimés du cache local.
+	 *
+	 * @param objectIds identifiants des objets à retirer du cache
+	 * @throws JvnException en cas d'erreur de communication ou de synchronisation
+	 */
+	public void jvnFlush(Set<Integer> objectIds)
+	throws JvnException;
 }
 
  

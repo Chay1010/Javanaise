@@ -73,6 +73,9 @@ public interface JvnRemoteCoord extends Remote {
   public void jvnTerminate(JvnRemoteServer js)
 	 throws java.rmi.RemoteException, JvnException;
 
+  public void jvnFlushObeject(int joi, JvnRemoteServer js, Serializable state)
+	  throws RemoteException, JvnException;
+
  }
 
 

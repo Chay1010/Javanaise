@@ -12,7 +12,9 @@ import java.rmi.Naming;
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.io.*;
+import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.Set;
 
 
 public class JvnServerImpl
@@ -29,12 +31,14 @@ public class JvnServerImpl
 	//Reference vers le coordinateur
 	private JvnRemoteCoord coord;
 
+
 	/*
 	 * Liste des objets connus par ce serveur.
 	 * clé   : ID de l'objet
 	 * valeur : JvnObject correspondant
 	 */
 	private Hashtable<Integer, JvnObjectImpl> cachedObjects;
+	private static final int MAX_CACHE_SIZE = 1;
 
 
   /**
@@ -97,6 +101,7 @@ public class JvnServerImpl
             throw new RuntimeException(e);
         }
         JvnObjectImpl newObject = new JvnObjectImpl(id, o, js, JvnObjectImpl.LockState.W);
+		checkCacheCapacity();
 		cachedObjects.put(id, newObject);
 		return newObject;
 	}
@@ -138,6 +143,7 @@ public class JvnServerImpl
 
 		JvnObjectImpl joi = (JvnObjectImpl) jvnSearchedObject;
 		joi.setServer(this);
+		checkCacheCapacity();
 		cachedObjects.put(joi.jvnGetObjectId(), joi);
 
 		return joi;
@@ -151,6 +157,7 @@ public class JvnServerImpl
 	**/
    public Serializable jvnLockRead(int joi)
 	 throws JvnException {
+	   System.out.println("lockRead");
 		try {
 			return coord.jvnLockRead(joi, js);
 		} catch (RemoteException e) {
@@ -225,7 +232,81 @@ public class JvnServerImpl
 		}
 
 		return null;
-	 };
+	 }
+
+	/**
+	 * Retire un ensemble d'objets du cache local
+ 	 * @param objectIds identifiants des objets à retirer du cache
+	 * @throws JvnException
+	 */
+	public void jvnFlush(Set<Integer> objectIds) throws JvnException{
+
+		if(objectIds == null){
+			throw new JvnException("L'ensemble des identifiants ne peut pas être null");
+		}
+
+		for(Integer id: objectIds){
+			if(id == null){
+				continue;
+			}
+
+			//Recuperer la copie locale de cet objet
+			JvnObjectImpl obj= cachedObjects.get(id);
+
+			if(obj == null){
+				continue;
+			}
+
+			/*
+			* Un objet possédant un verrou actif ne doit pas être retiré
+			* du cache car il est encore utilisé par l'application.
+			*/
+			if(obj.isBusy()){
+				continue;
+			}
+
+			Serializable state = obj.getObjectStateForFlush();
+
+			try{
+				//le coordinateur met a jour ses informations sur cet objet
+					//Le coordinateur met a jour ses informatioins sur cet objet
+					coord.jvnFlushObeject(id,js,state);
+					System.out.println("Object flushed");
+					cachedObjects.remove(id);
+			}catch (RemoteException e){
+				throw new JvnException(
+						"Echec du flush de l'objet "+id + " : "+e.getMessage()
+				);
+
+			}
+		}
+
+	}
+	private Set<Integer> selectObjectsToFlush() {
+		Set<Integer> idsToFlush = new HashSet<>();
+
+		for (Integer id : cachedObjects.keySet()) {
+			JvnObjectImpl obj = cachedObjects.get(id);
+
+			if (obj != null && !obj.isBusy()) {
+				idsToFlush.add(id);
+			}
+		}
+
+		return idsToFlush;
+	}
+	private void checkCacheCapacity() throws JvnException {
+		if (cachedObjects.size() >= MAX_CACHE_SIZE) {
+
+			// Choisir les identifiants des objets à retirer
+			Set<Integer> idsToFlush = selectObjectsToFlush();
+
+			// Appeler réellement le flush
+			if (!idsToFlush.isEmpty()){
+				jvnFlush(idsToFlush);
+			}
+		}
+	}
 
 }
 

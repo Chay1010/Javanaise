@@ -9,6 +9,7 @@
 package jvn;
 
 import java.rmi.Naming;
+import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.HashSet;
@@ -29,6 +30,7 @@ public class JvnCoordImpl
   /**
 	 * this is therepresentation of each exposed object from the coordinator's prespective
 	 */
+  //-Dcoord.host=10.76.192.51 -Djava.rmi.server.hostname=10.76.192.118
   private class ObjectInCoord {
     Serializable object; // object itself
     JvnRemoteServer writer; // client with the permission to write
@@ -233,6 +235,24 @@ public class JvnCoordImpl
 				objectInfo.readers.remove(js);
 			}
      }
+    }
+
+    @Override
+    public void jvnFlushObeject(int joi, JvnRemoteServer js, Serializable state) throws RemoteException, JvnException {
+        ObjectInCoord obj = objects.get(joi);
+
+        if(obj == null){
+            throw new JvnException("Objet inconnu : " +joi );
+        }
+
+        synchronized (obj){
+            if(obj.writer != null && obj.writer.equals(js)){
+                obj.object=state;
+                obj.writer=null;
+            }
+
+            obj.readers.remove(js);
+        }
     }
 }
 
